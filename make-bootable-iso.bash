@@ -1,9 +1,11 @@
 #!/bin/bash -xv
 destdir="/media/sf_Downloads"
-kscfg="$(pwd)/ks-workstation.cfg"
-isocfg="$(pwd)/isolinux/isolinux.cfg"
-isobin="$(pwd)/isolinux/isolinux.bin"
-isocat="$(pwd)/isolinux/boot.cat"
+kscfg="$1"
+srcdir="$2"
+isocfg="$srcdir/isolinux/isolinux.cfg"
+isobin="$srcdir/isolinux/isolinux.bin"
+isocat="$srcdir/isolinux/boot.cat"
+date="$(date +%F-%H%M%S)"
 
 
 function CHKCFG {
@@ -25,13 +27,41 @@ function CHKBIN {
 }
 
 function GETINFO {
+	if [ -z "$kscfg" -o -z "$srcdir" ]; then
+		printf "You will need to specify the Kickstart config and the directory to make into an ISO.\n\n\n# %s <Kickstart config file> <Directory to make into ISO>\n\n\n" "$(echo $0)"
+		exit
+	fi
+	if [ ! -e "$kscfg" ]; then
+		printf "%s does NOT exist.\n" "$kscfg"
+		exit
+	else
+		if [ ! -f "$kscfg" ]; then
+			printf "%s is not a file.\n" "$kscfg"
+			exit
+		else
+			printf "%s is a file.\n" "$kscfg"
+			cp -f $kscfg $srcdir/kickstart-$date.cfg
+			kscfg="$srcdir/kickstart-$date.cfg"
+		fi
+	fi
+	if [ ! -e "$srcdir" ]; then
+		printf "%s does NOT exist.\n" "$srcdir"
+		exit
+	else
+		if [ ! -d "$srcdir" ]; then
+			printf "%s is not a directory.\n" "$srcdir"
+			exit
+		else
+			printf "%s is a directory.\n" "$srcdir"
+		fi
+	fi
         version=$(awk -F= '$1 == "#version" {printf $2}' $kscfg | sed 's/\./_/g')
         volid=$(awk -F= '$1 == "VOLID" {printf $2"\n"}' $kscfg | sed 's/"//g')
         hdlabel="$volid-V$version"
 }
 
 function SETPERMS {
-        chmod +w $(pwd)/isolinux
+        chmod +w $srcdir/isolinux
         chmod +w $isocfg
 }
 
@@ -52,16 +82,17 @@ function MODISOCFG {
 }
 
 function MAKEISO {
-        sudo mkisofs -o $destdir/$hdlabel-$(date +%F-%H%M%S).iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -V $hdlabel -boot-load-size 4 -boot-info-table -R -J -v -T .
+        sudo mkisofs -o $destdir/$hdlabel-$date.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -V $hdlabel -boot-load-size 4 -boot-info-table -R -J -v -T .
 }
 
 function MAKE-BOOTABLE-ISO {
+        GETINFO
         CHKCFG
         CHKBIN
-        GETINFO
         SETPERMS
         MODISOCFG
         MAKEISO
 }
 
-MAKE-BOOTABLE-ISO > $destdir/$0-$(date +%F-%H%M%S).log 2>&1
+#MAKE-BOOTABLE-ISO > $destdir/$0-$(date +%F-%H%M%S).log 2>&1
+MAKE-BOOTABLE-ISO
