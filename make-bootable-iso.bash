@@ -82,6 +82,7 @@ function MODISOCFG {
 }
 
 function MAKEISO {
+	cd $srcdir
         sudo mkisofs -o $destdir/$hdlabel-$date.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -V $hdlabel -boot-load-size 4 -boot-info-table -R -J -v -T .
 }
 
