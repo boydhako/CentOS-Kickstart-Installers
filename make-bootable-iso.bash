@@ -1,5 +1,5 @@
 #!/bin/bash -xv
-destdir="/media/sf_Downloads"
+destdir="$HOME/CENTOS-ISO"
 kscfg="$1"
 srcdir="$2"
 isocfg="$srcdir/isolinux/isolinux.cfg"
@@ -8,6 +8,13 @@ isocat="$srcdir/isolinux/boot.cat"
 date="$(date +%F-%H%M%S)"
 
 
+function PREP {
+	if [ ! -d "$destdir" ]; then
+		mkdir -p $destdir
+	fi
+	CHKCFG
+	CHKBIN
+}
 function CHKCFG {
         for cfg in $kscfg $isocfg ; do
                 if [ ! -e $cfg ]; then
@@ -88,8 +95,7 @@ function MAKEISO {
 
 function MAKE-BOOTABLE-ISO {
         GETINFO
-        CHKCFG
-        CHKBIN
+	PREP
         SETPERMS
         MODISOCFG
         MAKEISO
